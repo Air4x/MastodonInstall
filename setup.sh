@@ -32,7 +32,7 @@ apt install -y \
 corepack enable && echo "[SETUP] corepack enable"
 
 # create mastodon use
-adduser --disable-password mastodon  && echo "[SETUP] mastodon user created"
+adduser --disabled-password mastodon  && echo "[SETUP] mastodon user created"
 
 # creating a user for postgress
 echo "In the prompt write:"
