@@ -43,7 +43,9 @@ sudo -u postgres psql
 # change to mastodon user
 su - mastodon
 
+
 # cloning mastodon code
+cd ..
 git clone https://github.com/mastodon/mastodon.git live && cd live 
 git checkout $(git tag -l | grep '^v[0-9.]*$' | sort -V | tail -n 1)
 
