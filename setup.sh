@@ -1,18 +1,44 @@
 #!/usr/bin/env bash
 
+function checkout_mastodon() {
+    cd ..
+    git clone https://github.com/mastodon/mastodon.git live && cd live || exit
+    git checkout "$(git tag -l | grep '^v[0-9.]*$' | sort -V | tail -n 1)"
+}
+export -f 'checkout_mastodon'
+
+function install_ruby() {
+    cd ..
+    git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+    echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
+    echo 'eval "$(rbenv init -)"' >> ~/.bashrc
+    source  ~/.bashrc
+    git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
+    RUBY_CONFIGURE_OPTS=--with-jemalloc rbenv install
+}
+export -f 'install_ruby'
+
+function install_deps() {
+    bundle config deployment 'true'
+    bundle config without 'development test'
+    bundle install -j"$(getconf _NPROCESSORS_ONLN)"
+    yarn install
+}
+export -f 'install_deps'
+
 # script dependencies
 apt install -y curl wget gnupg apt-transport-https lsb-release ca-certificates
 
 # node
 which node
-if [ $? -ne 0 ]; then
+if [ "$(which node)" -ne 0 ]; then
     echo "Setting up nodeJS install"
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg 
     echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 fi
 # postgresSQL
 which psql
-if [ $? -ne 0 ]; then
+if [ "$(which psql)" -ne 0 ]; then
     wget -O /usr/share/keyrings/postgresql.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
     echo "deb [signed-by=/usr/share/keyrings/postgresql.asc] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/postgresql.list
 fi
@@ -40,33 +66,17 @@ echo "CREATE USER mastodon CREATEDB;"
 echo "\q"
 sudo -u postgres psql
 
-# change to mastodon user
-su - mastodon
-
-
 # cloning mastodon code
-cd ..
-git clone https://github.com/mastodon/mastodon.git live && cd live 
-git checkout $(git tag -l | grep '^v[0-9.]*$' | sort -V | tail -n 1)
+sudo -u mastodon -c 'checkout_mastodon'
 
 # installing ruby
-cd ..
-git clone https://github.com/rbenv/rbenv.git ~/.rbenv
-echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
-echo 'eval "$(rbenv init -)"' >> ~/.bashrc
-source  ~/.bashrc
-git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
-
-RUBY_CONFIGURE_OPTS=--with-jemalloc rbenv install
+sudo -u mastodon -c 'install_ruby'
 
 # installing ruby and javascript dependencies
-bundle config deployment 'true'
-bundle config without 'development test'
-bundle install -j$(getconf _NPROCESSORS_ONLN)
-yarn install
+sudo -u mastodon -c 'install_deps'
 
 # generating conf
-RAILS_ENV=production bin/rails mastodon:setup
+sudo -u mastodon -c 'RAILS_ENV=production bin/rails mastodon:setup'
 
 # returning to root
 exit
