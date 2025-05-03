@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Variables
+$USER_HOME=/home/mastodon/
+$MASTODON_HOME=$USER_HOME/live
 # script dependencies
 apt install -y curl wget gnupg apt-transport-https lsb-release ca-certificates
 
@@ -40,10 +43,12 @@ echo "\q"
 sudo -u postgres psql
 
 # cloning mastodon code
-sudo -H -u mastodon  git clone https://github.com/mastodon/mastodon.git live && cd live
+sudo -H -u mastodon  git clone https://github.com/mastodon/mastodon.git $MASTODON_HOME
+sudo -H -u mastodon  cd $MASTODON_HOME
 sudo -H -u mastodon  git checkout "$(git tag -l | grep '^v[0-9.]*$' | sort -V | tail -n 1)"
 
 # installing ruby
+sudo -H -u mastodo 
 sudo -H -u mastodon  git clone https://github.com/rbenv/rbenv.git ~/.rbenv
 sudo -H -u mastodon  echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
 sudo -H -u mastodon  echo 'eval "$(rbenv init -)"' >> ~/.bashrc
