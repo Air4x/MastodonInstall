@@ -1,31 +1,4 @@
 #!/usr/bin/env bash
-
-function checkout_mastodon() {
-    cd ..
-    git clone https://github.com/mastodon/mastodon.git live && cd live || exit
-    git checkout "$(git tag -l | grep '^v[0-9.]*$' | sort -V | tail -n 1)"
-}
-export -f 'checkout_mastodon'
-
-function install_ruby() {
-    cd ..
-    git clone https://github.com/rbenv/rbenv.git ~/.rbenv
-    echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
-    echo 'eval "$(rbenv init -)"' >> ~/.bashrc
-    source  ~/.bashrc
-    git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
-    RUBY_CONFIGURE_OPTS=--with-jemalloc rbenv install
-}
-export -f 'install_ruby'
-
-function install_deps() {
-    bundle config deployment 'true'
-    bundle config without 'development test'
-    bundle install -j"$(getconf _NPROCESSORS_ONLN)"
-    yarn install
-}
-export -f 'install_deps'
-
 # script dependencies
 apt install -y curl wget gnupg apt-transport-https lsb-release ca-certificates
 
@@ -67,16 +40,25 @@ echo "\q"
 sudo -u postgres psql
 
 # cloning mastodon code
-sudo -u mastodon -c 'checkout_mastodon'
+sudo -H -u mastodon -c git clone https://github.com/mastodon/mastodon.git live && cd live
+sudo -H -u mastodon -c git checkout "$(git tag -l | grep '^v[0-9.]*$' | sort -V | tail -n 1)"
 
 # installing ruby
-sudo -u mastodon -c 'install_ruby'
+sudo -H -u mastodon -c git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+sudo -H -u mastodon -c echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
+sudo -H -u mastodon -c echo 'eval "$(rbenv init -)"' >> ~/.bashrc
+sudo -H -u mastodon -c source  ~/.bashrc
+sudo -H -u mastodon -c git clone https://github.com/rbenv/ruby-build.git "$(rbenv root)"/plugins/ruby-build
+sudo -H -u mastodon -c RUBY_CONFIGURE_OPTS=--with-jemalloc rbenv install
 
 # installing ruby and javascript dependencies
-sudo -u mastodon -c 'install_deps'
+sudo -H -u mastodon -c bundle config deployment 'true'
+sudo -H -u mastodon -c bundle config without 'development test'
+sudo -H -u mastodon -c bundle install -j"$(getconf _NPROCESSORS_ONLN)"
+sudo -H -u mastodon -c yarn install
 
 # generating conf
-sudo -u mastodon -c 'RAILS_ENV=production bin/rails mastodon:setup'
+sudo -H -u mastodon -c 'RAILS_ENV=production bin/rails mastodon:setup'
 
 # returning to root
 exit
