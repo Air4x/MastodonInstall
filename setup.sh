@@ -35,17 +35,21 @@ apt install -y \
 corepack enable && echo "[SETUP] corepack enable"
 
 # create mastodon use
-adduser --disabled-password mastodon  && echo "[SETUP] mastodon user created"
+adduser --disabled-password mastodon
+echo "[SETUP] User mastodon created"
 
 # creating a user for postgress
+
 echo "In the prompt write:"
 echo "CREATE USER mastodon CREATEDB;"
 echo "\q"
 sudo -u postgres psql
+echo "[SETUP] User mastodon for postgress created"
 
 # cloning mastodon code
+echo "[SETUP] Cloning mastodon source code"
 sudo -H -u mastodon  git clone https://github.com/mastodon/mastodon.git $MASTODON_HOME
-sudo -H -D $MASTODON_HOME -u mastodon  git checkout "$(git tag -l | grep '^v[0-9.]*$' | sort -V | tail -n 1)"
+sudo -H -u mastodon  sh -c 'cd $MASTODON_HOME ;; git checkout "$(git tag -l | grep '^v[0-9.]*$' | sort -V | tail -n 1)"'
 
 # installing ruby
 sudo -H -u mastodon
