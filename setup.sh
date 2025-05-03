@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Variables
-$USER_HOME=/home/mastodon/
-$MASTODON_HOME=$USER_HOME/live
+USER_HOME="/home/mastodon/"
+MASTODON_HOME="$USER_HOME/live"
 # script dependencies
 apt install -y curl wget gnupg apt-transport-https lsb-release ca-certificates
 
